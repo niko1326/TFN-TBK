@@ -61,7 +61,58 @@ class DateUtils{
         }
         return false;
     }
+
+    static getDaysBetween(date1, date2){
+        const diffMs = Math.abs(date2-date1);
+        return diffMs/ (1000*60*60*24);
+    }
+
+    static formatDate(date){
+        const day = date.getDate()
+        const month = date.getMonth()+1
+        const year = date.getFullYear()
+        return `${String(day).padStart(2, "0")}-${String(month).padStart(2, "0")}-${year}`
+    }
+
+    addDays(date, days){
+        return new Date(date.getTime() + (days*(1000*60*60*24)))
+    }
 }
+
+
+class Validator{
+    static isValidISBN(isbn){
+        return /^\d{13}$/.test(isbn);
+    }
+
+    static isValidEmail(email){
+        const re = /^(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z0-9-]+\.)+[a-zA-Z]{2,}))$/;
+        return re.test(String(email).trim());
+    }
+
+    static isValidYear(year){
+        const currentYear = new Date().getFullYear();
+        return year>=1000 && year <= currentYear;
+    }
+
+    static isValidPageCount(pages){
+        return pages > 0;
+    }
+}
+
+class Book {
+    constructor(title, author, isbn, publicationYear, totalCopies, borrowedCopies, genre){
+        this.title = title;
+        this.author = author;
+        this.isbn = isbn;
+        this.publicationYear = publicationYear;
+        this.totalCopies = totalCopies;
+        this.borrowedCopies = borrowedCopies;
+        this.genre = genre;
+    }
+    
+}
+
 
 
 
