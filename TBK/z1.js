@@ -110,8 +110,91 @@ class Book {
         this.borrowedCopies = borrowedCopies;
         this.genre = genre;
     }
+
+    //Gettery
+    get availableCopies(){
+        return this.totalCopies - this.borrowedCopies;
+    }
+
+    get isAvailable(){
+        return this.availableCopies > 0;
+    }
+
+    get info(){
+        return `${this.title} by ${this.author} (${this.publicationYear}) - ISBN: ${this.isbn}, Genre: ${this.genre}, Available: ${this.availableCopies}/${this.totalCopies}`;
+    }
+
+    get age(){
+        const currentYear = new Date().getFullYear();
+        return currentYear - this.publicationYear;
+    }
+
+
+    //Settery
+    set copies({total, borrowed}){
+        if (total !== undefined) this.totalCopies = total;
+        if (borrowed !== undefined) this.borrowedCopies = borrowed;
+    }
     
+    set details({title, author, genre}){
+        if (title) this.title = title;
+        if (author) this.author = author;
+        if (genre) this.genre = genre;
+    }
+
+    //Metody
+    borrow(){
+        if (this.isAvailable){
+            this.borrowedCopies += 1;
+            return true;
+        }
+        return false;
+    }
+
+    return(){
+        if (this.borrowedCopies > 0){
+            this.borrowedCopies -= 1;
+            return true;
+        }
+        return false;
+    }
+
+    getFormattedInfo(){
+        return `Title: ${this.title}\nAuthor: ${this.author}\nISBN: ${this.isbn}\nPublication Year: ${this.publicationYear}\nGenre: ${this.genre}\nTotal Copies: ${this.totalCopies}\nBorrowed Copies: ${this.borrowedCopies}\nAvailable Copies: ${this.availableCopies}`;
+    }
+    
+    static isValidBook(bookData){
+        const {title, author, isbn, publicationYear, totalCopies, genre} = bookData;
+        return title && author && Validator.isValidISBN(isbn) && Validator.isValidYear(publicationYear) && totalCopies > 0 && genre;
+    }
+
 }
+
+
+
+
+
+// do klasy LIbrary:
+
+// get totalBooks(){
+//         return this.totalCopies;
+//     }
+
+//     get availableBooks(){
+//         return this.totalCopies - this.borrowedCopies;
+//     }
+
+//     get statistics(){
+//         return {
+//             title: this.title,
+//             author: this.author,
+//             isbn: this.isbn,
+//             publicationYear: this.publicationYear,
+//             totalCopies: this.totalCopies,
+//             borrowedCopies: this.borrowedCopies,
+//             genre: this.genre
+//         }
+//     }
 
 
 
