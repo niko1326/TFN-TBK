@@ -162,14 +162,73 @@ class Book {
     getFormattedInfo(){
         return `Title: ${this.title}\nAuthor: ${this.author}\nISBN: ${this.isbn}\nPublication Year: ${this.publicationYear}\nGenre: ${this.genre}\nTotal Copies: ${this.totalCopies}\nBorrowed Copies: ${this.borrowedCopies}\nAvailable Copies: ${this.availableCopies}`;
     }
-    
+
+
+    //Statyczne metody
     static isValidBook(bookData){
         const {title, author, isbn, publicationYear, totalCopies, genre} = bookData;
         return title && author && Validator.isValidISBN(isbn) && Validator.isValidYear(publicationYear) && totalCopies > 0 && genre;
     }
 
+    static compareBookByYear(book1, book2){
+        return book1.publicationYear - book2.publicationYear;
+    }
 }
 
+class User {
+    constructor(name, email, registrationDate, borrowedBooks, borrowHistory){
+        this.name = name;
+        this.email = email;
+        this.registrationDate = registrationDate;
+        this.borrowedBooks = [];
+        this.borrowHistory = [];
+    }
+
+    //Gettery
+
+    get canBorrow(){    
+        return this.borrowedBooks.length < 5;
+    }
+
+    get borrowedCount(){
+        return this.borrowedBooks.length;
+    }
+
+    get profile(){
+        return {
+            name: this.name,
+            email: this.email,
+            registrationDate: this.registrationDate,
+            borrowedCount: this.borrowedCount,
+            borrowHistory: this.borrowHistory
+        }
+    }
+
+    //Settery
+    set info({name, email}){
+        if (name) this.name = name;
+        if (email && Validator.isValidEmail(email)) this.email = email;
+    }
+
+    //Metody
+    addBorrowedBook(isbn, bookTitle){
+        if (this.canBorrow){
+            this.borrowedBooks.push(isbn);
+            this.borrowHistory.push({isbn, bookTitle, borrowDate: new Date()});
+            return true;
+        }
+        return false;
+    }
+
+    removeBorrowedBook(isbn){
+        const index = this.borrowedBooks.indexOf(isbn);
+        if (index !== -1){
+            this.borrowedBooks.splice(index, 1);
+            return true;
+        }
+        return false;
+    }
+}
 
 
 
