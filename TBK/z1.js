@@ -180,8 +180,8 @@ class User {
         this.name = name;
         this.email = email;
         this.registrationDate = registrationDate;
-        this.borrowedBooks = [];
-        this.borrowHistory = [];
+        this.borrowedBooks = borrowedBooks || [];
+        this.borrowHistory = borrowHistory || [];
     }
 
     //Gettery
@@ -228,12 +228,204 @@ class User {
         }
         return false;
     }
+
+    getBorrowHistory(){
+        return this.borrowHistory.map(
+            entry => `${entry.bookTitle} (ISBN: ${entry.isbn}) borrowed on ${DateUtils.formatDate(entry.borrowDate)}`
+        );
+    }
+}
+
+User.prototype.getFormattedHistory = function(){
+    return this.borrowHistory.map(
+        entry => `${entry.bookTitle} (ISBN: ${entry.isbn}) borrowed on ${DateUtils.formatDate(entry.borrowDate)}`
+    ).join("\n");
+}
+
+User.prototype.hasOverdueBooks = function(days){
+    const currentDate = new Date();
+    for (const entry of this.borrowHistory){
+        const daysBorrowed = DateUtils.getDaysBetween(entry.borrowDate, currentDate);
+        if (daysBorrowed > days){
+            return true;
+        }
+    }
+    return false;
+}
+
+class Library {
+    constructor(name, books, users, loans, maxBooksPerUser){
+        this.name = name;
+        this.books = books || [];
+        this.users = users || [];
+        this.loans = loans || [];
+        this.maxBooksPerUser = maxBooksPerUser || 5;
+    }
+
+    //Gettery
+    get totalBooks() {
+        return this.books.reduce((acc, {totalCopies}) => acc + totalCopies, 0)
+    }
+
+    get availableBooks(){
+        return this.books.filter(book => book.isAvailable).length;
+    }
+
+    get statistics(){
+        return {
+            totalBooks: this.totalBooks,
+            availableBooks: this.availableBooks,
+            totalTitles: this.books.lenght,
+            totalUsers: this.users.lenght,
+            borrowedBooks: this.books.reduce((sum, book) => sum + book.borrowedCopies, 0)
+        };
+    }
+
+    //Metody zarządzania książkami
+
+    addBook({ title, author, isbn, publicationYear, totalCopies = 1, borrowedCopies = 0, genre }) {
+        const newBook = new Book(title, author, isbn, publicationYear, totalCopies, borrowedCopies, genre);
+        this.books.push(newBook);
+        return newBook;
+    }
+
+    removeBook(isbn){
+        const index = this.books.findIndex(book => book.isbn === isbn)
+        if (index !== -1){
+            this.books.splice(index, 1);
+            return true
+        }
+        return false
+    }
+
+    findBookByISBN(isbn){
+        const index = this.books.findIndex(book => book.isbn === isbn)
+        if (index !== -1){
+            return this.books[index];
+        }
+        return false
+    }
+
+    findBookByAuthor(author){
+        return this.books.filter(book => book.author === author) || false
+    }
+    
+    findBookByGenre(genre){
+        return this.books.genre(book => book.genre === genre) || false
+    }
+
+    updateBook(isbn, updates){
+        const index = this.books.findIndex(book => book.isbn === isbn)
+        if (index !== -1){
+            this.books[index] = {
+                ...this.books[index],
+                ...updates
+            }
+            return true
+        }
+        return false
+    }
+
+    //Metody zarządzania użytkownikami
+
+    registerUser({ name, email, registrationDate = new Date(), borrowedBooks = [], borrowHistory = [] }) {
+        if (!Validator.isValidEmail(email)) {
+            throw new Error("Invalid email");
+        }
+
+        const newUser = new User(name, email, registrationDate, borrowedBooks, borrowHistory);
+        this.users.push(newUser);
+        return newUser;
+    }
+
+    removeUser(email){
+        const index = this.users.findIndex(user => user.email === email)
+        if (index !== -1){
+            this.users.splice(index, 1);
+            return true
+        }
+        return false
+    }
+
+    findUserByEmail(email){
+        const index = this.users.findIndex(user => user.email === email)
+        if (index !== -1){
+            return this.users[index];
+        }
+        return false
+    }
+
+    updateUser(email, updates){
+        const index = this.users.findIndex(user => user.email === email)
+        if (index !== -1){
+            this.users[index] = {
+                ...this.users[index],
+                ...updates
+            }
+            return true
+        }
+        return false
+    }
+
+    //Metody wypożyczeń
+
+    borrowBook(userEmail, isbn){
+        const user = this.findUserByEmail(userEmail);
+        const book = this.findBookByISBN(isbn);
+
+        if (user && book && user.canBorrow && book.isAvailable){
+            book.borrow();
+            user.addBorrowedBook(book.isbn, book.title);
+            return true
+        }
+        return false
+    }
+    
+    returnBook(userEmail, isbn){
+        const user = this.findUserByEmail(userEmail);
+        const book = this.findBookByISBN(isbn);
+
+        if (user && book){
+            book.return();
+            user.removeBorrowedBook(book.isbn, book.title);
+            return true
+        }
+        return false
+    }
+
+    getUserLoans(userEmail){
+        const user = this.findUserByEmail(userEmail);
+        return user.getBorrowHistory();
+    }
+
+    getOverdueLoans(days){
+        let overdueLoans = [];
+        for (const user in this.users){
+            for (const entry in user.borrowHistory){
+                const daysBorrowed = DateUtils.getDaysBetween(entry.borrowDate, new Date());
+
+                if (daysBorrowed > days && !returnDate){
+                    overdueLoans.push({
+                        userEmail: user.email,
+                        userName: user.name,
+                        isbn: entry.isbn,
+                        bookTitle: entry.bookTitle,
+                        borrowDate: entry.borrowDate,
+                        daysOverdue: daysBorrowed - days
+                    })
+                }
+            }
+        }
+
+        return overdueLoans;
+    }
+
+
+
 }
 
 
-
-
-// do klasy LIbrary:
+// do klasy Library:
 
 // get totalBooks(){
 //         return this.totalCopies;
