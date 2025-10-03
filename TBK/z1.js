@@ -410,19 +410,46 @@ class Library {
                         userName: user.name,
                         isbn: entry.isbn,
                         bookTitle: entry.bookTitle,
+                        bookAuthor: entry.bookAuthor,
                         borrowDate: entry.borrowDate,
                         daysOverdue: daysBorrowed - days
                     })
                 }
             }
         }
-
         return overdueLoans;
     }
 
+    //Metody raportowania
 
+    getPopularBooks(limit){
+        return [...this.books].sort((a, b) => b.borrowedCopies - a.borrowedCopies).slice(0, limit);
+    }
 
+    getActiveUsers(limit){
+        return [...this.users].sort((a, b) => b.borrowedCount - a.borrowedCount).slice(0, limit);
+    }
+
+    generateReport(){
+        return `
+            Library name: ${this.name}\n
+            Number of users: ${this.users.length}\n
+            Books (total): ${this.books.length}\n
+            Available books (total): ${this.availableBooks}\n
+            Most loaned books (Top 3): ${this.getPopularBooks(3).map(b => `${b.title} (${b.borrowedCopies} borrows)`).join("\n")}\n
+            Most active users (Top 3): ${this.getActiveUsers(3).map(u => `${u.name} (${u.borrowedCount} borrows)`).join("\n")}\n
+            Loans (total): ${this.loans.length}\n
+            Amount of overdue books (assuming 14 days): ${this.getOverdueLoans(14).length}\n
+            Overdue entries: ${this.getOverdueLoans(14).map(entry => `${entry.userName} - "${entry.bookTitle}" by ${entry.bookAuthor} - ${entry.daysOverdue} days`).join("\n")}\n
+        `;
+    }
 }
+
+//Funkcje Pomocnicze
+
+// swapElements([el1, el2]){
+
+// }
 
 
 // do klasy Library:
