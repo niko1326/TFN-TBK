@@ -56,10 +56,7 @@ Array.prototype.unique = function(callback) {
 
 class DateUtils{
     static isLeapYear(year){
-        if (year%4==0 && !(year%100==0) && year%400==0){
-            return true;
-        }
-        return false;
+        return (year % 4 === 0 && year % 100 !== 0) || year % 400 === 0;
     }
 
     static getDaysBetween(date1, date2){
@@ -74,7 +71,7 @@ class DateUtils{
         return `${String(day).padStart(2, "0")}-${String(month).padStart(2, "0")}-${year}`
     }
 
-    addDays(date, days){
+    static addDays(date, days){
         return new Date(date.getTime() + (days*(1000*60*60*24)))
     }
 }
@@ -170,7 +167,7 @@ class Book {
         return title && author && Validator.isValidISBN(isbn) && Validator.isValidYear(publicationYear) && totalCopies > 0 && genre;
     }
 
-    static compareBookByYear(book1, book2){
+    static compareByYear(book1, book2){
         return book1.publicationYear - book2.publicationYear;
     }
 }
@@ -190,7 +187,7 @@ class User {
         return this.borrowedBooks.length < 5;
     }
 
-    get borrowedCount(){
+    get borrowCount(){
         return this.borrowedBooks.length;
     }
 
@@ -199,7 +196,7 @@ class User {
             name: this.name,
             email: this.email,
             registrationDate: this.registrationDate,
-            borrowedCount: this.borrowedCount,
+            borrowCount: this.borrowCount,
             borrowHistory: this.borrowHistory
         }
     }
@@ -268,15 +265,15 @@ class Library {
     }
 
     get availableBooks(){
-        return this.books.filter(book => book.isAvailable).length;
+        return this.books.reduce((sum, b) => sum + b.availableCopies, 0);
     }
 
     get statistics(){
         return {
             totalBooks: this.totalBooks,
             availableBooks: this.availableBooks,
-            totalTitles: this.books.lenght,
-            totalUsers: this.users.lenght,
+            totalTitles: this.books.length,
+            totalUsers: this.users.length,
             borrowedBooks: this.books.reduce((sum, book) => sum + book.borrowedCopies, 0)
         };
     }
@@ -284,6 +281,8 @@ class Library {
     //Metody zarządzania książkami
 
     addBook({ title, author, isbn, publicationYear, totalCopies = 1, borrowedCopies = 0, genre }) {
+        const data = { title, author, isbn, publicationYear, totalCopies, genre };
+        if (!Book.isValidBook(data)) throw new Error('Invalid book data');
         const newBook = new Book(title, author, isbn, publicationYear, totalCopies, borrowedCopies, genre);
         this.books.push(newBook);
         return newBook;
@@ -293,6 +292,7 @@ class Library {
         const index = this.books.findIndex(book => book.isbn === isbn)
         if (index !== -1){
             this.books.splice(index, 1);
+            this.loans = this.loans.filter(l => l.isbn !== isbn);
             return true
         }
         return false
@@ -307,23 +307,18 @@ class Library {
     }
 
     findBookByAuthor(author){
-        return this.books.filter(book => book.author === author) || false
+        return this.books.filter(b => b.author === author);
     }
     
     findBookByGenre(genre){
-        return this.books.genre(book => book.genre === genre) || false
+        return this.books.filter(b => b.genre === genre);
     }
 
     updateBook(isbn, updates){
-        const index = this.books.findIndex(book => book.isbn === isbn)
-        if (index !== -1){
-            this.books[index] = {
-                ...this.books[index],
-                ...updates
-            }
-            return true
-        }
-        return false
+        const book = this.findBookByISBN(isbn);
+        if (!book) return false;
+        Object.assign(book, updates);
+        return true;
     }
 
     //Metody zarządzania użytkownikami
@@ -332,39 +327,35 @@ class Library {
         if (!Validator.isValidEmail(email)) {
             throw new Error("Invalid email");
         }
-
         const newUser = new User(name, email, registrationDate, borrowedBooks, borrowHistory);
         this.users.push(newUser);
         return newUser;
     }
 
     removeUser(email){
-        const index = this.users.findIndex(user => user.email === email)
-        if (index !== -1){
-            this.users.splice(index, 1);
-            return true
+        const Index = this.users.findIndex(u => u.email === email);
+        if (Index === -1) {
+            return false;
         }
-        return false
+        const hasLoans = this.loans.some(l => l.userEmail === email);
+        if (hasLoans) {
+            throw new Error('User has active loans');
+        }
+        this.users.splice(Index, 1);
+        return true;
     }
 
     findUserByEmail(email){
-        const index = this.users.findIndex(user => user.email === email)
-        if (index !== -1){
-            return this.users[index];
-        }
-        return false
+        return this.users.find(u => u.email === email) || null;
     }
 
     updateUser(email, updates){
-        const index = this.users.findIndex(user => user.email === email)
-        if (index !== -1){
-            this.users[index] = {
-                ...this.users[index],
-                ...updates
-            }
-            return true
+        const user = this.findUserByEmail(email);
+        if (!user) {
+            return false;
         }
-        return false
+        Object.assign(user, updates);
+        return true;
     }
 
     //Metody wypożyczeń
@@ -372,52 +363,46 @@ class Library {
     borrowBook(userEmail, isbn){
         const user = this.findUserByEmail(userEmail);
         const book = this.findBookByISBN(isbn);
-
-        if (user && book && user.canBorrow && book.isAvailable){
-            book.borrow();
-            user.addBorrowedBook(book.isbn, book.title);
-            return true
+        if (!user || !book) {
+            return false;
         }
-        return false
+        if (!user.canBorrow || !book.isAvailable) {
+            return false;
+        }
+        book.borrow();
+        user.addBorrowedBook(book.isbn, book.title);
+
+        const borrowDate = new Date();
+        const dueDate = DateUtils.addDays(borrowDate, loanDays);
+        this.loans.push(createLoan({ userEmail, isbn, borrowDate, dueDate })); // ← użyj helpera
+        return true;
     }
     
     returnBook(userEmail, isbn){
         const user = this.findUserByEmail(userEmail);
         const book = this.findBookByISBN(isbn);
-
-        if (user && book){
-            book.return();
-            user.removeBorrowedBook(book.isbn, book.title);
-            return true
+        if (!user || !book) {
+            return false;
         }
-        return false
+
+        const loanIndex = this.loans.findIndex(l => l.userEmail === userEmail && l.isbn === isbn);
+        if (loanIndex === -1) {
+            return false;
+        }
+        book.return();
+        user.removeBorrowedBook(isbn);
+        this.loans.splice(loanIndex, 1);
+        return true;
     }
 
     getUserLoans(userEmail){
-        const user = this.findUserByEmail(userEmail);
-        return user.getBorrowHistory();
+        return this.loans.filter(l => l.userEmail === userEmail);
     }
 
     getOverdueLoans(days){
-        let overdueLoans = [];
-        for (const user in this.users){
-            for (const entry in user.borrowHistory){
-                const daysBorrowed = DateUtils.getDaysBetween(entry.borrowDate, new Date());
-
-                if (daysBorrowed > days && !returnDate){
-                    overdueLoans.push({
-                        userEmail: user.email,
-                        userName: user.name,
-                        isbn: entry.isbn,
-                        bookTitle: entry.bookTitle,
-                        bookAuthor: entry.bookAuthor,
-                        borrowDate: entry.borrowDate,
-                        daysOverdue: daysBorrowed - days
-                    })
-                }
-            }
-        }
-        return overdueLoans;
+        return this.loans
+        .map(l => ({ ...l, daysOverdue: DateUtils.getDaysBetween(l.dueDate, asOf) }))
+        .filter(l => asOf > l.dueDate && l.daysOverdue > 0);
     }
 
     //Metody raportowania
@@ -427,7 +412,7 @@ class Library {
     }
 
     getActiveUsers(limit){
-        return [...this.users].sort((a, b) => b.borrowedCount - a.borrowedCount).slice(0, limit);
+        return [...this.users].sort((a, b) => b.borrowCount - a.borrowCount).slice(0, limit);
     }
 
     generateReport(){
@@ -437,7 +422,7 @@ class Library {
             Books (total): ${this.books.length}\n
             Available books (total): ${this.availableBooks}\n
             Most loaned books (Top 3): ${this.getPopularBooks(3).map(b => `${b.title} (${b.borrowedCopies} borrows)`).join("\n")}\n
-            Most active users (Top 3): ${this.getActiveUsers(3).map(u => `${u.name} (${u.borrowedCount} borrows)`).join("\n")}\n
+            Most active users (Top 3): ${this.getActiveUsers(3).map(u => `${u.name} (${u.borrowCount} borrows)`).join("\n")}\n
             Loans (total): ${this.loans.length}\n
             Amount of overdue books (assuming 14 days): ${this.getOverdueLoans(14).length}\n
             Overdue entries: ${this.getOverdueLoans(14).map(entry => `${entry.userName} - "${entry.bookTitle}" by ${entry.bookAuthor} - ${entry.daysOverdue} days`).join("\n")}\n
@@ -447,9 +432,103 @@ class Library {
 
 //Funkcje Pomocnicze
 
-// swapElements([el1, el2]){
+//Funkcje operacji na tablicach
+function swapElements([el1, el2]){
+    return [el2, el1];
+}
 
-// }
+function mergeArray(...arrays){
+    return arrays.flat();
+}
+
+function uniqueValues(array){
+    return array.unique();
+}
+
+//Funkcje operacji na obiektach
+
+function extendObject(obj1, obj2){
+    return {...obj1, ...obj2};
+}
+
+function cloneObject(obj){
+    return {...obj};
+}
+
+function pickProperties(obj, keys){
+    let objectClone = cloneObject(obj);
+    let picked = {};s
+    for (const key of keys) {
+        if (key in objectClone) {
+            picked[key] = objectClone[key];
+        }
+    }
+    return picked;
+}
+
+//Funkcje tworzące obiekty
+
+function createBook({title, author, isbn, publicationYear, totalCopies = 1, genre = "Inne"}){
+    return new Book(title, author, isbn, publicationYear, totalCopies, 0, genre)
+}
+
+function createLoan({userEmail, isbn, borrowDate = new Date(), dueDate}){
+    const loan = {
+        userEmail,
+        isbn,
+        borrowDate,
+        dueDate
+    }
+    return loan;
+}
+
+//Funkcje przetwarzania danych
+
+function sortBooksByYear(books, order = 'asc'){
+    booksCopy = [...books];
+    booksCopy.sort((a, b) => a.publicationYear - b.publicationYear);
+    if (order === 'desc'){
+        return booksCopy.reverse();
+    }
+    return booksCopy;
+}
+
+function filterAvailableBooks(books){
+    booksCopy = [...books];
+    booksCopy.filter(book => book.isAvailable())
+    return booksCopy;
+}
+
+function calculateStatistics(books, users, loans) {
+    const totalBooks = books.reduce((sum, book) => sum + book.totalCopies, 0);
+    const availableBooks = books.reduce((sum, book) => sum + book.availableCopies, 0);
+    const totalUsers = users.length;
+    const totalLoans = loans.length;
+
+    const overdueLoans = loans.filter(loan => 
+        DateUtils.getDaysBetween(loan.borrowDate, loan.dueDate) > 14
+    ).length;
+
+    const groupedByGenre = books.groupBy("genre");
+    let mostPopularGenre = null;
+    let maxCount = 0;
+    for (const genre in groupedByGenre) {
+        if (groupedByGenre[genre].length > maxCount) {
+            mostPopularGenre = genre;
+            maxCount = groupedByGenre[genre].length;
+        }
+    }
+
+    return {
+        totalBooks,
+        availableBooks,
+        totalUsers,
+        totalLoans,
+        overdueLoans,
+        mostPopularGenre
+    };
+}
+
 
 
 // do klasy Library:

@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>GameDex — szybkie wyszukiwanie Pokémonów</title>
+  <link rel="stylesheet" href="styles.css"/>
+</head>
+<body>
+  <header class="container">
+    <h1>GameDex</h1>
+    <p class="subtitle">Mini-apka do szybkiego wyszukiwania Pokémonów (PokeAPI)</p>
+    <div class="search">
+      <input id="searchInput" type="text" placeholder="Szukaj po nazwie (np. pikachu)..." aria-label="Szukaj Pokémona"/>
+      <button id="searchBtn" aria-label="Szukaj">Szukaj</button>
+      <button id="clearBtn" aria-label="Wyczyść">Wyczyść</button>
+    </div>
+    <div id="status" role="status" aria-live="polite" class="status"></div>
+    <div id="error" role="alert" class="error" hidden></div>
+  </header>
+
+  <main class="container grid">
+    <section>
+      <h2>Lista (pierwsze 20)</h2>
+      <ul id="list" class="list"></ul>
+    </section>
+    <section>
+      <h2>Szczegóły</h2>
+      <div id="details" class="details placeholder">Wybierz Pokémona z listy albo użyj wyszukiwarki.</div>
+    </section>
+  </main>
+
+  <footer class="container footer">
+    Źródło danych: <a href="https://pokeapi.co" target="_blank" rel="noreferrer">PokeAPI</a>
+  </footer>
+
+  <script src="app.js" defer></script>
+</body>
+</html>
