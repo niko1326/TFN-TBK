@@ -90,7 +90,6 @@ h1{
 }
 .search button:hover{
 	background: #f7b800;
-	transform: translateY(-1px);
 }
 .search button:first-of-type{
 	border-radius: 0;
@@ -214,6 +213,7 @@ h1{
 }
 
 .details{
+	margin-top: 20px;
 	background: #ffffff;
 	border: 2px solid #b0c3f1;
 	border-radius: 10px;
