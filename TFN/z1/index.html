@@ -3,36 +3,39 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>GameDex — szybkie wyszukiwanie Pokémonów</title>
+  <title>GameDex</title>
   <link rel="stylesheet" href="styles.css"/>
 </head>
 <body>
-  <header class="container">
+  <header class="wrap">
     <h1>GameDex</h1>
-    <p class="subtitle">Mini-apka do szybkiego wyszukiwania Pokémonów (PokeAPI)</p>
+
     <div class="search">
-      <input id="searchInput" type="text" placeholder="Szukaj po nazwie (np. pikachu)..." aria-label="Szukaj Pokémona"/>
-      <button id="searchBtn" aria-label="Szukaj">Szukaj</button>
-      <button id="clearBtn" aria-label="Wyczyść">Wyczyść</button>
+      <input id="q" type="text" placeholder="np. pikachu" autocomplete="off" />
+      <button id="btnSearch">Szukaj</button>
+      <button id="btnClear">Wyczyść</button>
+      <ul id="suggest" class="suggest" hidden></ul>
     </div>
-    <div id="status" role="status" aria-live="polite" class="status"></div>
-    <div id="error" role="alert" class="error" hidden></div>
+
+    <div id="status" class="status">
+      <span class="spin" aria-hidden="true"></span>
+      <span id="statusText"></span>
+    </div>
+
+    <div id="err" class="err" hidden></div>
   </header>
 
-  <main class="container grid">
+  <main class="wrap grid">
     <section>
-      <h2>Lista (pierwsze 20)</h2>
+      <h2>Pierwsze 20</h2>
       <ul id="list" class="list"></ul>
     </section>
+
     <section>
       <h2>Szczegóły</h2>
-      <div id="details" class="details placeholder">Wybierz Pokémona z listy albo użyj wyszukiwarki.</div>
+      <div id="details" class="details">Wybierz coś z listy albo wpisz nazwę.</div>
     </section>
   </main>
-
-  <footer class="container footer">
-    Źródło danych: <a href="https://pokeapi.co" target="_blank" rel="noreferrer">PokeAPI</a>
-  </footer>
 
   <script src="app.js" defer></script>
 </body>
