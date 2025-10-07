@@ -306,18 +306,18 @@ class Library {
         return false
     }
 
-    findBookByAuthor(author){
-        return this.books.filter(b => b.author === author);
+    findBooksByAuthor(author){
+        return this.books.filter(b => b.author.toLowerCase() === author.toLowerCase());
     }
     
-    findBookByGenre(genre){
-        return this.books.filter(b => b.genre === genre);
+    findBooksByGenre(genre){
+        return this.books.filter(b => b.genre.toLowerCase() === genre.toLowerCase());
     }
 
-    updateBook(isbn, updates){
-        const book = this.findBookByISBN(isbn);
-        if (!book) return false;
-        Object.assign(book, updates);
+    updateBook(isbn, updates) {
+        const index = this.books.findIndex(b => b.isbn === isbn);
+        if (index === -1) return false;
+        this.books[index] = { ...this.books[index], ...updates };
         return true;
     }
 
@@ -349,12 +349,10 @@ class Library {
         return this.users.find(u => u.email === email) || null;
     }
 
-    updateUser(email, updates){
-        const user = this.findUserByEmail(email);
-        if (!user) {
-            return false;
-        }
-        Object.assign(user, updates);
+    updateUser(email, updates) {
+        const index = this.users.findIndex(u => u.email === email);
+        if (index === -1) return false;
+        this.users[index] = { ...this.users[index], ...updates };
         return true;
     }
 
@@ -400,9 +398,10 @@ class Library {
     }
 
     getOverdueLoans(days){
+        const asOf = new Date();
         return this.loans
         .map(l => ({ ...l, daysOverdue: DateUtils.getDaysBetween(l.dueDate, asOf) }))
-        .filter(l => asOf > l.dueDate && l.daysOverdue > 0);
+        .filter(l => asOf > l.dueDate && l.daysOverdue > (days ?? 0));
     }
 
     //Metody raportowania
@@ -416,6 +415,7 @@ class Library {
     }
 
     generateReport(){
+        const overdue = this.getOverdueLoans(14);
         return `
             Library name: ${this.name}\n
             Number of users: ${this.users.length}\n
@@ -424,20 +424,26 @@ class Library {
             Most loaned books (Top 3): ${this.getPopularBooks(3).map(b => `${b.title} (${b.borrowedCopies} borrows)`).join("\n")}\n
             Most active users (Top 3): ${this.getActiveUsers(3).map(u => `${u.name} (${u.borrowCount} borrows)`).join("\n")}\n
             Loans (total): ${this.loans.length}\n
-            Amount of overdue books (assuming 14 days): ${this.getOverdueLoans(14).length}\n
-            Overdue entries: ${this.getOverdueLoans(14).map(entry => `${entry.userName} - "${entry.bookTitle}" by ${entry.bookAuthor} - ${entry.daysOverdue} days`).join("\n")}\n
+            Amount of overdue books (assuming 14 days): ${overdue.length}\n
+            Overdue entries: ${overdue.map(entry => {
+                const book = this.findBookByISBN(entry.isbn);
+                const user = this.findUserByEmail(entry.userEmail);
+                return `${user?.name ?? entry.userEmail} - "${book?.title ?? entry.isbn}" by ${book?.author ?? "Unknown"} - ${entry.daysOverdue} days`;
+            }).join("\n")}\n
         `;
     }
 }
 
 //Funkcje Pomocnicze
 
+const loanDays = 14;
+
 //Funkcje operacji na tablicach
 function swapElements([el1, el2]){
     return [el2, el1];
 }
 
-function mergeArray(...arrays){
+function mergeArrays(...arrays){
     return arrays.flat();
 }
 
@@ -457,7 +463,7 @@ function cloneObject(obj){
 
 function pickProperties(obj, keys){
     let objectClone = cloneObject(obj);
-    let picked = {};s
+    let picked = {};
     for (const key of keys) {
         if (key in objectClone) {
             picked[key] = objectClone[key];
@@ -470,6 +476,10 @@ function pickProperties(obj, keys){
 
 function createBook({title, author, isbn, publicationYear, totalCopies = 1, genre = "Inne"}){
     return new Book(title, author, isbn, publicationYear, totalCopies, 0, genre)
+}
+
+function createUser({name, email, registrationDate = new Date(), borrowedBooks = [], borrowHistory = []}){
+    return { name, email, registrationDate, borrowedBooks, borrowHistory };
 }
 
 function createLoan({userEmail, isbn, borrowDate = new Date(), dueDate}){
@@ -485,7 +495,7 @@ function createLoan({userEmail, isbn, borrowDate = new Date(), dueDate}){
 //Funkcje przetwarzania danych
 
 function sortBooksByYear(books, order = 'asc'){
-    booksCopy = [...books];
+    let booksCopy = [...books];
     booksCopy.sort((a, b) => a.publicationYear - b.publicationYear);
     if (order === 'desc'){
         return booksCopy.reverse();
@@ -494,9 +504,8 @@ function sortBooksByYear(books, order = 'asc'){
 }
 
 function filterAvailableBooks(books){
-    booksCopy = [...books];
-    booksCopy.filter(book => book.isAvailable())
-    return booksCopy;
+    let booksCopy = [...books];
+    return booksCopy.filter(book => book.isAvailable);
 }
 
 function calculateStatistics(books, users, loans) {
@@ -528,32 +537,6 @@ function calculateStatistics(books, users, loans) {
         mostPopularGenre
     };
 }
-
-
-
-// do klasy Library:
-
-// get totalBooks(){
-//         return this.totalCopies;
-//     }
-
-//     get availableBooks(){
-//         return this.totalCopies - this.borrowedCopies;
-//     }
-
-//     get statistics(){
-//         return {
-//             title: this.title,
-//             author: this.author,
-//             isbn: this.isbn,
-//             publicationYear: this.publicationYear,
-//             totalCopies: this.totalCopies,
-//             borrowedCopies: this.borrowedCopies,
-//             genre: this.genre
-//         }
-//     }
-
-
 
 
 // Inicjalizacja biblioteki
@@ -616,6 +599,9 @@ console.log(numbers.myEvery(n => n > 0)); // true
 console.log(numbers.myFilter(n => n % 2 === 0)); // [2, 4]
 
 // Testy funkcji pomocniczych
+const tolkienBook = library.findBookByISBN("9788324589456");
+const orwellBook = library.findBookByISBN("9788328708815");
 const [book1, book2] = swapElements([tolkienBook, orwellBook]);
+const dystopiaBooks = library.findBooksByGenre("Dystopia");
 const allBooks = mergeArrays(fantasyBooks, dystopiaBooks);
 const extended = extendObject(book1, {genre: "Epic Fantasy"});
