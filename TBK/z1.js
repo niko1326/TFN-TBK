@@ -372,7 +372,7 @@ class Library {
 
         const borrowDate = new Date();
         const dueDate = DateUtils.addDays(borrowDate, loanDays);
-        this.loans.push(createLoan({ userEmail, isbn, borrowDate, dueDate })); // ← użyj helpera
+        this.loans.push(createLoan({ userEmail, isbn, borrowDate, dueDate }));
         return true;
     }
     
@@ -474,8 +474,8 @@ function pickProperties(obj, keys){
 
 //Funkcje tworzące obiekty
 
-function createBook({title, author, isbn, publicationYear, totalCopies = 1, genre = "Inne"}){
-    return new Book(title, author, isbn, publicationYear, totalCopies, 0, genre)
+function createBook({title, author, isbn, publicationYear, totalCopies = 1, borrowedCopies = 0, genre = "Inne"}){
+    return new Book(title, author, isbn, publicationYear, totalCopies, borrowedCopies, genre)
 }
 
 function createUser({name, email, registrationDate = new Date(), borrowedBooks = [], borrowHistory = []}){
