@@ -202,9 +202,12 @@ class User {
     }
 
     //Settery
-    set info({name, email}){
+    set info({name, email, registrationDate, borrowedBooks, borrowHistory}){
         if (name) this.name = name;
         if (email && Validator.isValidEmail(email)) this.email = email;
+        this.registrationDate = new Date();
+        this.borrowedBooks = borrowedBooks;
+        this.borrowHistory = borrowHistory;
     }
 
     //Metody
