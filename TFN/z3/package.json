@@ -6,7 +6,7 @@
     "homepage": "https://niko1326.github.io/TFN-TBK/TFN/z3/",
     "scripts": {
       "start": "cross-env NODE_ENV=development PUBLIC_PATH=/ webpack serve",
-      "build": "cross-env NODE_ENV=production PUBLIC_PATH=/REPO_NAME/TFN/z3/ webpack --progress",
+      "build": "cross-env NODE_ENV=production PUBLIC_PATH=/TFN-TBK/TFN/z3/ webpack --progress",
       "postbuild:docs": "rm -rf ../../docs/TFN/z3 && mkdir -p ../../docs/TFN/z3 && cp -r dist/* ../../docs/TFN/z3/",
       "build:docs": "npm run build && npm run postbuild:docs"
     },
