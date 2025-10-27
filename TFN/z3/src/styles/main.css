@@ -1,0 +1,280 @@
+*{
+    box-sizing: border-box;
+  }
+  
+  body{
+    font-family: "Press Start 2P", system-ui, sans-serif;
+    background: #f4f7fc;
+    color: #041326;
+    text-align: center;
+    margin: 0;
+  }
+  
+  a{
+    color: #2a75bb;
+    text-decoration: none;
+  }
+  
+  a:hover{
+    text-decoration: underline;
+  }
+  
+  .wrap{
+    width: 92%;
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 20px;
+  }
+  
+  header.wrap{
+    border-bottom: 3px solid #2a75bb;
+    margin-bottom: 20px;
+    padding-bottom: 10px;
+  }
+  
+  h1{
+    font-size: 22px;
+    color: #2a75bb;
+    margin: 0 0 8px;
+  }
+  
+  .muted{
+    color: #5b6b8b;
+    font-size: 12px;
+  }
+  
+  .grid{
+    display: grid;
+    grid-template-columns: 1.4fr 1fr;
+    gap: 20px;
+  }
+  
+  @media (max-width: 1020px){
+    .grid{
+      grid-template-columns: 1fr;
+    }
+  }
+  
+  /* Search row styled like Task 1 (input + two buttons as a single control) */
+  .searchRow{
+    position: relative;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 0;
+    margin: 10px auto;
+  }
+  
+  .searchRow .field{
+    position: relative;
+    flex: 1;
+    max-width: 460px;
+  }
+  
+  .searchRow input{
+    width: 100%;
+    padding: 12px;
+    border: 2px solid #9cb7f3;
+    border-radius: 10px 0 0 10px;
+    font-family: inherit;
+    font-size: 12px;
+    background: #ffffff;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  }
+  
+  .searchRow input:only-child{
+    border-radius: 10px;
+  }
+  
+  .btn{
+    padding: 12px 16px;
+    border: 2px solid #9cb7f3;
+    border-left: none;
+    border-radius: 0 10px 10px 0;
+    background: #ffcb05;
+    cursor: pointer;
+    font-family: inherit;
+    font-size: 12px;
+    color: #082444;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    transition: background 0.2s ease, transform 0.1s ease;
+    margin-left: -2px;
+  }
+  
+  .btn:hover{
+    background: #f7b800;
+  }
+  
+  .status{
+    min-height: 22px;
+    margin-top: 8px;
+    color: #5b6b8b;
+    font-size: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+  }
+  
+  .error{
+    color: #b00020;
+    background: #ffecec;
+    border: 1px solid #ffb3b3;
+    padding: 10px;
+    border-radius: 10px;
+  }
+  
+  .spin{
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    border: 2px solid #9cb7f3;
+    border-top-color: #2a75bb;
+    display: inline-block;
+    animation: spin 0.8s linear infinite;
+  }
+  
+  @keyframes spin{
+    to{ transform: rotate(360deg); }
+  }
+  
+  .list{
+    list-style: none;
+    margin: 20px 0;
+    border: 2px solid #b0c3f1;
+    border-radius: 10px;
+    overflow: hidden;
+    background: #ffffff;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.05);
+    text-align: left;
+  }
+  
+  .row{
+    display: grid;
+    grid-template-columns: 80px 60px 1fr;
+    align-items: center;
+    padding: 10px 14px;
+    border-bottom: 1px solid #d6e0f8;
+    transition: background 0.2s ease;
+    cursor: pointer;
+  }
+  
+  .row:nth-child(odd){
+    background: #f9fbff;
+  }
+  
+  .row:last-child{
+    border-bottom: none;
+  }
+  
+  .row:hover{
+    background: #e8f0ff;
+  }
+  
+  .badge{
+    display: inline-block;
+    width: 60px;
+    height: 26px;
+    background: #2a75bb;
+    color: #fff;
+    border: 1px solid #1e5ca2;
+    border-radius: 8px;
+    font-size: 10px;
+    font-weight: bold;
+    line-height: 26px;
+    text-align: center;
+    margin-right: 8px;
+  }
+  
+  .sprite{
+    width: 48px;
+    height: 48px;
+    object-fit: contain;
+    margin-right: 10px;
+  }
+  
+  .name{
+    font-size: 12px;
+    font-weight: bold;
+    color: #041326;
+  }
+  
+  .name small{
+    display: block;
+    font-weight: normal;
+    color: #5b6b8b;
+    font-size: 10px;
+  }
+  
+  .details{
+    margin-top: 20px;
+    background: #ffffff;
+    border: 2px solid #b0c3f1;
+    border-radius: 10px;
+    padding: 16px;
+    box-shadow: 0 6px 14px rgba(0,0,0,0.08);
+    text-align: left;
+    overflow: auto;
+  }
+  
+  /* keep compatibility with both class names */
+  .typeTag,
+  .badge-type{
+    display: inline-block;
+    padding: 4px 8px;
+    background: #e9f1ff;
+    border: 1px solid #b0c3f1;
+    border-radius: 6px;
+    margin-right: 6px;
+    font-size: 10px;
+    font-weight: bold;
+    color: #082444;
+  }
+  
+  .kv{
+    display: grid;
+    grid-template-columns: 90px 1fr;
+    gap: 6px;
+    margin: 8px 0;
+    font-size: 12px;
+  }
+  
+  .bar{
+    height: 8px;
+    background: #e4ecff;
+    border: 1px solid #b0c3f1;
+    border-radius: 8px;
+    overflow: hidden;
+  }
+  
+  .bar > div{
+    height: 100%;
+    width: 0%;
+  }
+  
+  .abilities{
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-top: 6px;
+  }
+  
+  .ability{
+    padding: 4px 8px;
+    border: 1px solid #b0c3f1;
+    border-radius: 8px;
+    background: #f7faff;
+    font-size: 11px;
+  }
+  
+  .ability.hidden{
+    border-style: dashed;
+    background: #fff8e7;
+  }
+  
+  .foot{
+    margin-top: 30px;
+    font-size: 10px;
+    color: #5b6b8b;
+    text-align: center;
+  }

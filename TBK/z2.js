@@ -1,5 +1,4 @@
 // SYSTEM ANALITYCZNY ZAMÓWIEŃ E-COMMERCE - WERSJA FUNKCYJNA
-// Przekształcona wersja wykorzystująca programowanie funkcyjne: funkcje czyste, niezmienność danych, wyższe funkcje (map, filter, reduce)
 
 // Funkcja tworząca nowe zamówienie
 const createOrder = (id, customerId, items, discount, region) => ({
