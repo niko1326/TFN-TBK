@@ -6,7 +6,6 @@ const webpack = require("webpack");
 
 const isProd = process.env.NODE_ENV === "production";
 
-// Ustaw to w skryptach jako /NAZWA_REPO/ aby działało na GitHub Pages (subpath)
 const PUBLIC_PATH = process.env.PUBLIC_PATH || "/";
 
 module.exports = {
