@@ -1,18 +1,18 @@
 const API = "https://pokeapi.co/api/v2";
 
 const appState = {
-  list: [],               // [{id, name, sprite}]
-  details: null,          // full pokemon object
-  types: [],              // ["fire","water",...]
-  query: "",              // live search (name or number)
-  activeTypes: new Set(), // selected type filters
-  mode: "jsx",            // "jsx" | "ce" (card renderer)
+  list: [],
+  details: null,
+  types: [],
+  query: "",
+  activeTypes: new Set(),
+  mode: "jsx",
   loading: false,
   error: "",
-  cache: {},              // id -> full details
+  cache: {},
   _detailsPrefetched: false,
-  index: [],              // full index of all pokemon {id, name}
-  typeIndex: {}           // { [typeName]: Set<string id> }
+  index: [],
+  typeIndex: {}
 };
 
 // Capitalize
@@ -86,7 +86,6 @@ async function loadIndex(){
     update(s => { s.index = index; });
   }catch(e){
     console.error(e);
-    // Non-fatal: app still works on the initial 50 until index loads
   }
 }
 
@@ -95,13 +94,11 @@ async function ensureTypeIndexFor(types){
   const toFetch = types.filter(t => !appState.typeIndex[t]);
   if (toFetch.length === 0) return;
 
-  // fetch sequentially (safe) — could be parallel if you like
   for (const t of toFetch){
     try{
       const res = await fetch(`${API}/type/${t}`);
       if (!res.ok) throw new Error("HTTP " + res.status);
       const data = await res.json();
-      // data.pokemon: [{ pokemon: { name, url }, slot }]
       const ids = new Set(data.pokemon.map(x => idFromUrl(x.pokemon.url)));
       update(s => { s.typeIndex[t] = ids; });
     }catch(e){
@@ -117,12 +114,12 @@ async function openDetails(idOrName){
     if(!res.ok) throw new Error("HTTP " + res.status);
     const d = await res.json();
 
-    await delay(500); // show spinner briefly (demo UX)
+    await delay(500);
 
     update(s => {
       s.details = d;
       s.cache[d.id] = d;
-      s.cache[d.name] = d; // convenience
+      s.cache[d.name] = d;
     });
   }catch(e){
     console.error(e);
@@ -132,7 +129,7 @@ async function openDetails(idOrName){
   }
 }
 
-// (Legacy) prefetch for the initial 50
+// Prefetch for the initial 50
 async function ensureAllDetails(){
   if(appState._detailsPrefetched) return;
   appState._detailsPrefetched = true;
@@ -160,11 +157,8 @@ function toggleType(t){
   });
 
   if (appState.activeTypes.size > 0){
-    // Make sure we have the global names index for id->name mapping
     if (!appState.index.length) loadIndex();
-    // Make sure we have type->ids for all selected types
     ensureTypeIndexFor([...appState.activeTypes]);
-    // (Optional) still prefetch visible details so Details open fast
     prefetchVisibleDetails();
   }
 }
@@ -173,19 +167,15 @@ function toggleType(t){
 function getBaseItems(state){
   const q = state.query.trim().toLowerCase();
 
-  // CASE A: there is a search query -> use index-based global search
   if (q && state.index && state.index.length){
     const fromIndex = state.index.filter(p => p.name.includes(q) || String(p.id) === q);
     return fromIndex.map(p => buildItem(p.id, p.name));
   }
 
-  // CASE B: no query, but types are active -> build from type sets (intersection)
   if (!q && state.activeTypes.size > 0){
     const types = [...state.activeTypes];
-    // all type sets must be ready
     const allReady = types.every(t => state.typeIndex[t]);
     if (allReady && state.index.length){
-      // intersection of all selected type id sets
       let intersection = null;
       for (const t of types){
         const setT = state.typeIndex[t];
@@ -196,8 +186,6 @@ function getBaseItems(state){
           }
         }
       }
-      // map ids -> names using global index
-      // (build a quick map for speed)
       const nameById = new Map(state.index.map(p => [p.id, p.name]));
       const items = Array.from(intersection)
         .map(id => {
@@ -207,10 +195,8 @@ function getBaseItems(state){
         .filter(Boolean);
       return items;
     }
-    // if not ready yet, fall through to initial 50 while typeIndex loads
   }
 
-  // CASE C: default -> initial 50 (optionally narrowed by q)
   let base = state.list;
   if (q){
     base = base.filter(p => p.name.includes(q) || String(p.id) === q);
@@ -218,7 +204,6 @@ function getBaseItems(state){
   return base;
 }
 
-// Prefetch details for currently visible items (cap concurrency)
 async function prefetchVisibleDetails(limit = 80, concurrency = 6){
   const baseItems = getBaseItems(appState).slice(0, limit);
   const missing = baseItems.filter(p => !appState.cache[p.id]);
@@ -241,7 +226,7 @@ async function prefetchVisibleDetails(limit = 80, concurrency = 6){
   );
 }
 
-// Input handler: live search + conditional prefetch when filters are active
+// Input handler: live search
 function onQueryInput(e){
   const val = e.target.value;
   update(s => { s.query = val; });
@@ -254,11 +239,8 @@ function onQueryInput(e){
 function getFilteredList(state){
   const q = state.query.trim();
 
-  // 1) start from base items (aware of global search & type intersection)
   let items = getBaseItems(state);
 
-  // 2) If there IS a search query, and types are active, we still need
-  //    to apply cache-based type filtering (because base came from search)
   if (q && state.activeTypes.size){
     const required = [...state.activeTypes];
     items = items.filter(p => {
@@ -269,13 +251,11 @@ function getFilteredList(state){
     });
   }
 
-  // If there's NO query and types are active, base already enforces types via intersection,
-  // so we don't need the cache-dependent filter here.
 
   return items.slice(0, 100);
 }
 
-// ====== PRESENTATIONAL COMPONENTS (pure functions) ======
+// COMPONENTS
 function PokemonCardJSX({ p, onOpen }){
   return (
     <li className="row" onClick={() => onOpen(p.id)}>
@@ -420,7 +400,7 @@ function App({ state }){
   );
 }
 
-// ====== RENDER (manual, no hooks) ======
+//RENDER (manual, no hooks)
 const root = ReactDOM.createRoot(document.getElementById("root"));
 function render(){ root.render(<App state={appState} />); }
 
