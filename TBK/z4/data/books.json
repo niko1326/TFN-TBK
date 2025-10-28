@@ -1,0 +1,20 @@
+[
+  {
+    "title": "Wiedźmin",
+    "author": "Sapkowski",
+    "isbn": "1234567890123",
+    "publicationYear": 1990,
+    "totalCopies": 3,
+    "borrowedCopies": 1,
+    "genre": "Fantasy"
+  },
+  {
+    "title": "1984",
+    "author": "Orwell",
+    "isbn": "1234567890124",
+    "publicationYear": 1949,
+    "totalCopies": 5,
+    "borrowedCopies": 0,
+    "genre": "Dystopia"
+  }
+]

@@ -1,8 +1,6 @@
-// ===== Utils =====
 const sleep = (ms) => new Promise((res) => setTimeout(res, ms));
 const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-// Prosty shim na localStorage (dla Node)
 const LocalStorageShim = (() => {
   const store = new Map();
   return {
@@ -15,7 +13,6 @@ const LocalStorageShim = (() => {
 })();
 const localStorageLike = (typeof localStorage !== "undefined") ? localStorage : LocalStorageShim;
 
-// ===== MODELE =====
 class Book {
   constructor({ title, author, isbn, copies = 1 }) {
     if (!title || !author || !isbn) throw new Error("Book requires title, author, isbn");
@@ -23,7 +20,7 @@ class Book {
     this.author = author;
     this.isbn = String(isbn);
     this.copies = Number.isFinite(copies) ? copies : 1;
-    this.available = this.copies; // liczba dostępnych egz.
+    this.available = this.copies;
   }
 }
 
@@ -44,51 +41,38 @@ class Loan {
   }
 }
 
-// ============================================================
-// CZĘŚĆ VII: Klasa AsyncDatabase
-// ============================================================
 class AsyncDatabase {
-  /**
-   * @param {object} [opts]
-   * @param {number} [opts.delay=500] - bazowe opóźnienie w ms
-   */
   constructor({ delay = 500 } = {}) {
     this.delay = delay;
-    this.data = new Map(); // key -> any (serializowalne)
+    this.data = new Map();
   }
 
   _netDelay() {
-    // 10% szansa "wolnej sieci" => 2x delay
     const slow = Math.random() < 0.10;
     return slow ? this.delay * 2 : this.delay;
   }
 
-  /** Zapis z opóźnieniem */
   async save(key, value) {
     await sleep(this._netDelay());
     this.data.set(String(key), value);
     return true;
   }
 
-  /** Pobranie z opóźnieniem; null jeśli brak */
   async get(key) {
     await sleep(this._netDelay());
     return this.data.has(String(key)) ? this.data.get(String(key)) : null;
   }
 
-  /** Usunięcie; true jeśli istniało */
   async delete(key) {
     await sleep(this._netDelay());
     return this.data.delete(String(key));
   }
 
-  /** Wszystkie wartości jako tablica */
   async getAll() {
     await sleep(this._netDelay());
     return [...this.data.values()];
   }
 
-  /** Czyści bazę, zwraca liczbę usuniętych elementów */
   async clear() {
     await sleep(this._netDelay());
     const n = this.data.size;
@@ -97,17 +81,12 @@ class AsyncDatabase {
   }
 }
 
-// ============================================================
-// CZĘŚĆ VIII: Klasa Library z metodami async
-// ============================================================
 class Library {
   constructor({ database = new AsyncDatabase() } = {}) {
     this.database = database;
   }
 
-  // ---------- 8.1 KSIĄŻKI ----------
   async addBookAsync(bookData) {
-    // prosta walidacja
     if (!bookData?.isbn || !bookData?.title) throw new Error("Book must have title and isbn");
     const book = new Book(bookData);
     await this.database.save(`book_${book.isbn}`, book);
@@ -123,14 +102,12 @@ class Library {
     const key = `book_${isbn}`;
     const book = await this.database.get(key);
     if (!book) return false;
-    // Nie usuwaj, jeśli egzemplarze wypożyczone
     if ((book.copies ?? 1) > (book.available ?? 0)) {
       throw new Error("Cannot remove: book is currently borrowed");
     }
     return this.database.delete(key);
   }
 
-  // ---------- 8.2 UŻYTKOWNICY ----------
   async registerUserAsync(userData) {
     if (!userData?.email || !emailRegex.test(userData.email)) {
       throw new Error("Invalid email");
@@ -145,7 +122,6 @@ class Library {
     return raw ? Object.assign(new User({ name: raw.name, email: raw.email }), raw) : null;
   }
 
-  // ---------- 8.3 WYPOŻYCZENIA ----------
   async borrowBookAsync(userEmail, isbn) {
     const [book, user] = await Promise.all([
       this.getBookAsync(isbn),
@@ -186,9 +162,6 @@ class Library {
     return true;
   }
 
-  // ============================================================
-  // CZĘŚĆ IX: Promise.all
-  // ============================================================
   async initializeLibraryAsync(booksData, usersData) {
     const addBooksPromises = booksData.map((b) => this.addBookAsync(b));
     const addUsersPromises = usersData.map((u) => this.registerUserAsync(u));
@@ -208,7 +181,6 @@ class Library {
   }
 
   async batchBorrowBooksAsync(userEmail, isbns) {
-    // Wypożyczaj równolegle – jeśli któreś się nie uda, zwróć wynik z informacją
     const results = await Promise.allSettled(
       isbns.map((isbn) => this.borrowBookAsync(userEmail, isbn))
     );
@@ -219,9 +191,6 @@ class Library {
     });
   }
 
-  // ============================================================
-  // CZĘŚĆ X: Promise.race
-  // ============================================================
   createTimeout(ms, errorMessage = "Operation timed out") {
     return new Promise((_, reject) => {
       setTimeout(() => reject(new Error(errorMessage)), ms);
@@ -229,20 +198,14 @@ class Library {
   }
 
   async searchWithTimeout(searchFunction, timeoutMs = 3000) {
-    // searchFunction: () => Promise<any>
     return Promise.race([searchFunction(), this.createTimeout(timeoutMs)]);
   }
 
   async getFastestResult(operations) {
-    // operations: array of Promise lub array funkcji zwracających Promise
     const promises = operations.map((op) => (typeof op === "function" ? op() : op));
-    // Zwróć wynik pierwszej zakończonej operacji (resolve lub reject)
     return Promise.race(promises);
   }
 
-  // ============================================================
-  // CZĘŚĆ XI: Promise.any
-  // ============================================================
   async findBookAnywhere(isbn) {
     const tryLocalStorage = async () => {
       await sleep(50);
@@ -259,11 +222,9 @@ class Library {
     };
 
     const tryExternalAPI = async () => {
-      // Symulacja "zewnętrznego API" – losowy czas + 20% brak książki
       const t = 200 + Math.random() * 600;
       await sleep(t);
       if (Math.random() < 0.20) throw new Error("not in externalAPI");
-      // Zwracamy minimalne dane książki
       const book = new Book({
         title: `External: ${isbn}`,
         author: "External Provider",
@@ -275,50 +236,39 @@ class Library {
 
     try {
       const result = await Promise.any([tryLocalStorage(), tryDatabase(), tryExternalAPI()]);
-      return result; // {book, source}
-    } catch (e) {
-      // AggregateError => brak sukcesów
+      return result;
+    } catch {
       return null;
     }
   }
 
   async verifyUserInMultipleSystems(email) {
     const simulateCheck = (name) => async () => {
-      // 30% szans na błąd systemu
       await sleep(100 + Math.random() * 500);
       if (Math.random() < 0.30) {
         throw new Error(`${name}: system error`);
       }
-      // Uznajmy, że jeśli user istnieje w DB => true, wpp false (ale false traktujemy jako REJECT
-      // by Promise.any zwróciło sukces tylko gdy faktycznie znaleziono)
       const user = await this.getUserAsync(email);
       if (user) return true;
       throw new Error(`${name}: user not found`);
     };
 
     try {
-      // Sukces, jeśli choć jeden system potwierdzi (resolve true).
       const result = await Promise.any([
         simulateCheck("SystemA")(),
         simulateCheck("SystemB")(),
         simulateCheck("SystemC")()
       ]);
       return !!result;
-    } catch (e) {
-      // Wszystkie odrzucone => brak potwierdzenia
+    } catch {
       return false;
     }
   }
 }
 
-// ============================================================
-// PRZYKŁAD UŻYCIA / DEMO
-// (uruchom i obserwuj konsolę; sekcje są niezależne, można komentować)
-// ============================================================
 (async () => {
   const lib = new Library({ database: new AsyncDatabase({ delay: 200 }) });
 
-  // Inicjalizacja (Promise.all)
   const init = await lib.initializeLibraryAsync(
     [
       { title: "Clean Code", author: "Robert C. Martin", isbn: "9780132350884", copies: 2 },
@@ -332,11 +282,9 @@ class Library {
   );
   console.log("Initialize:", init);
 
-  // Pobrania równoległe
   const someBooks = await lib.getMultipleBooksAsync(["9780132350884", "9781491904244", "0000000000"]);
   console.log("getMultipleBooksAsync:", someBooks.map(b => b.title));
 
-  // Wypożyczenia równoległe (Promise.allSettled)
   const batchBorrow = await lib.batchBorrowBooksAsync("ala@example.com", [
     "9780132350884",
     "9781491904244",
@@ -344,11 +292,9 @@ class Library {
   ]);
   console.log("batchBorrowBooksAsync:", batchBorrow);
 
-  // Zwrócenie jednej książki
   await lib.returnBookAsync("ala@example.com", "9781491904244");
   console.log("Returned YDKJS");
 
-  // Promise.race: wyszukiwanie z timeoutem
   const slowSearch = async () => {
     await sleep(1000);
     return "search-result";
@@ -356,16 +302,13 @@ class Library {
   const withTimeout = await lib.searchWithTimeout(slowSearch, 1500);
   console.log("searchWithTimeout:", withTimeout);
 
-  // getFastestResult
   const fastest = await lib.getFastestResult([
     async () => { await sleep(800); return "A"; },
     async () => { await sleep(300); return "B"; },
     async () => { await sleep(600); return "C"; }
   ]);
-  console.log("getFastestResult:", fastest); // "B"
+  console.log("getFastestResult:", fastest);
 
-  // Promise.any: findBookAnywhere
-  // Zapiszmy jedną książkę do localStorage (aby przetestować źródło)
   localStorageLike.setItem("book_9780596517748", JSON.stringify({
     title: "JS: The Good Parts (LS)",
     author: "Douglas Crockford",
@@ -376,20 +319,17 @@ class Library {
   const found = await lib.findBookAnywhere("9780596517748");
   console.log("findBookAnywhere:", found);
 
-  // verifyUserInMultipleSystems
   const verified1 = await lib.verifyUserInMultipleSystems("ala@example.com");
   const verified2 = await lib.verifyUserInMultipleSystems("nie_ma@example.com");
   console.log("verifyUserInMultipleSystems (ala):", verified1);
   console.log("verifyUserInMultipleSystems (nie_ma):", verified2);
 
-  // Próba usunięcia książki wypożyczonej
   try {
     await lib.removeBookAsync("9780132350884");
   } catch (e) {
     console.log("removeBookAsync blocked:", e.message);
   }
 
-  // Czyszczenie DB
   const removedCount = await lib.database.clear();
   console.log("DB cleared, removed:", removedCount);
 })();

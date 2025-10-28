@@ -1,0 +1,24 @@
+[
+  {
+    "name": "Jan Kowalski",
+    "email": "jan@email.com",
+    "registrationDate": "2025-10-28T10:08:14.597Z",
+    "borrowedBooks": [
+      "1234567890123"
+    ],
+    "borrowHistory": [
+      {
+        "isbn": "1234567890123",
+        "bookTitle": "Wiedźmin",
+        "borrowDate": "2025-10-28T10:08:14.599Z"
+      }
+    ]
+  },
+  {
+    "name": "Anna Nowak",
+    "email": "anna@email.com",
+    "registrationDate": "2025-10-28T10:08:14.597Z",
+    "borrowedBooks": [],
+    "borrowHistory": []
+  }
+]
